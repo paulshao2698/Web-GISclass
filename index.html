@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Food Truck Finder</title>
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+
+  <!-- Mapbox GL CSS -->
+  <link
+    href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css"
+    rel="stylesheet"
+  />
+  <!-- Custom CSS -->
+  <link href="styles-mapbox.css" rel="stylesheet" />
+</head>
+<body>
+  <div id="map-container">
+    <div id="map"></div>
+    <div id="map-error" class="map-error">
+      <p>Map failed to load. Please check your internet connection or try again later.</p>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h1>Food Truck Finder</h1>
+      <p>Find the best street corners for your food truck</p>
+    </div>
+
+    <div class="sidebar-content">
+      <div id="error-message" class="error"></div>
+
+      <div class="time-control">
+        <div class="time-display">
+          Time of Day: <span id="time-value">00:00</span>
+        </div>
+
+        <input
+          id="time-slider"
+          class="time-slider"
+          type="range"
+          min="0"
+          max="86400"
+          step="3600"
+          value="0"
+        />
+
+        <div class="time-marks">
+          <span>00:00</span>
+          <span>06:00</span>
+          <span>12:00</span>
+          <span>18:00</span>
+          <span>24:00</span>
+        </div>
+
+        <div class="auto-update">
+          <input type="checkbox" id="auto-update" checked />
+          <label for="auto-update">Auto-update map on time change</label>
+        </div>
+
+        <div class="options-container">
+          <div class="option">
+            <input type="checkbox" id="show-buildings" checked />
+            <label for="show-buildings">Show Buildings</label>
+          </div>
+          <div class="option">
+            <input type="checkbox" id="show-agent-paths" checked />
+            <label for="show-agent-paths">Show Agent Paths</label>
+          </div>
+          <div class="option">
+            <input type="checkbox" id="show-heatmap" checked />
+            <label for="show-heatmap">Show Heatmap</label>
+          </div>
+        </div>
+
+        <button id="show-top5-btn">Show Top 5 Locations</button>
+      </div>
+
+      <div class="locations-container">
+        <h3>Top Recommended Street Corners</h3>
+        <div id="locations-list">
+          <p>Use the slider and click "Show Top 5 Locations"</p>
+        </div>
+      </div>
+
+      <div class="tips-section">
+        <h3>Tips for Food Truck Owners</h3>
+        <ul>
+          <li>Lunch time (12:00–14:00) typically has the highest foot traffic</li>
+          <li>Evening spots (19:00–22:00) are great for dinner crowds</li>
+          <li>Morning locations (07:00–09:00) work well for breakfast and coffee</li>
+          <li>Street corners near multiple buildings have higher potential</li>
+          <li>Consider foot traffic patterns between buildings and transit</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer">
+      Food Truck Finder | Data Updates Every 24 Hours
+    </div>
+  </div>
+
+  <div id="loading" class="loading">
+    <div>Loading data, please wait...</div>
+    <button id="retry-button" style="margin-top: 15px; padding: 8px 15px;">
+      Retry with Sample Data
+    </button>
+    <div id="loading-progress" style="margin-top: 10px; font-size: 12px;"></div>
+  </div>
+
+  <!-- Mapbox GL JS -->
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+  <!-- Deck.gl -->
+  <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
+  
+  <!-- Sample data fallback -->
+  <script src="sample-data-mapbox.js"></script>
+  <!-- Custom JavaScript -->
+  <script src="script-mapbox.js"></script>
+</body>
+</html>
