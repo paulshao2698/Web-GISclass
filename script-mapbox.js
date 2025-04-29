@@ -1,5 +1,3 @@
-// script-mapbox.js
-
 // ─── Global State ───────────────────────────────────────────────────────────────
 
 let map;
@@ -94,50 +92,72 @@ document.addEventListener('click', (e) => {
 // ─── UI Controls ────────────────────────────────────────────────────────────────
 
 function setupControls() {
-  const slider  = document.getElementById('time-slider');
-  const display = document.getElementById('time-value');
+  const slider        = document.getElementById('time-slider');
+  const display       = document.getElementById('time-value');
+  const autoUpdate    = document.getElementById('auto-update');
+  const showBuildings = document.getElementById('show-buildings');
+  const showClusters  = document.getElementById('show-clusters');
+  const showHeatmap   = document.getElementById('show-heatmap');
+  const showHotspots  = document.getElementById('show-hotspots');
+  const showPaths     = document.getElementById('show-agent-paths');
+  const top5Btn       = document.getElementById('show-top5-btn');
 
+  // 1) Time slider + auto-update
   slider.addEventListener('input', () => {
     const secs = +slider.value;
     display.textContent = formatTime(secs);
-    if (document.getElementById('auto-update').checked) {
-      updateMapForTime(secs);
-    }
+    if (autoUpdate.checked) updateMapForTime(secs);
   });
+  top5Btn.onclick = () => updateMapForTime(+slider.value);
 
-  document.getElementById('show-top5-btn').onclick = () =>
-    updateMapForTime(+slider.value);
+  // 2) Show/hide individual building points
+  showBuildings.onchange = () => {
+    toggleLayerVisibility(BUILDINGS_LAYER_ID, showBuildings.checked);
+  };
 
-  ['show-buildings','show-agent-paths','show-heatmap'].forEach(id => {
-    const cb = document.getElementById(id);
-    if (!cb) return;
-    cb.onchange = () => {
-      if (id === 'show-buildings') {
-        toggleLayerVisibility(BUILDINGS_LAYER_ID, cb.checked);
-        toggleLayerVisibility(BUILDINGS_CLUSTER_LAYER_ID, cb.checked);
-      }
-      if (id === 'show-agent-paths') {
-        document.getElementById('deckgl-container').style.display = cb.checked ? 'block' : 'none';
-        isPlaying = cb.checked && document.getElementById('auto-update').checked;
-        if (isPlaying && !animation) animate();
-      }
-      if (id === 'show-heatmap') {
-        toggleLayerVisibility(HEATMAP_LAYER_ID, cb.checked);
-        toggleLayerVisibility(HOTSPOTS_LAYER_ID, cb.checked);
-      }
-    };
-  });
+  // 3) Show/hide building clusters (separate toggle)
+  showClusters.onchange = () => {
+    const on = showClusters.checked;
+    toggleLayerVisibility(BUILDINGS_CLUSTER_LAYER_ID, on);
+    toggleLayerVisibility('cluster-count',            on);
+  };
+
+  // 4) Show/hide heatmap layer
+  showHeatmap.onchange = () => {
+    toggleLayerVisibility(HEATMAP_LAYER_ID, showHeatmap.checked);
+  };
+
+  // 5) Show/hide agent-path hotspots
+  showHotspots.onchange = () => {
+    const on = showHotspots.checked;
+    // clustered hotspots
+    toggleLayerVisibility('hotspot-clusters',     on);
+    toggleLayerVisibility('hotspot-labels',       on);
+    // single-point hotspots
+    toggleLayerVisibility(HOTSPOTS_LAYER_ID,      on);
+    toggleLayerVisibility('hotspot-point-labels', on);
+  };
+
+  // 6) Show/hide & animate agent paths
+  showPaths.onchange = () => {
+    const deckCon = document.getElementById('deckgl-container');
+    deckCon.style.display = showPaths.checked ? 'block' : 'none';
+    isPlaying = showPaths.checked;
+    if (isPlaying) animate();
+  };
 }
 
+// Utility to toggle any layer by ID
 function toggleLayerVisibility(layerId, visible) {
   if (!map.getLayer(layerId)) return;
   map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
 }
 
+// Human-friendly HH:MM formatter
 function formatTime(seconds) {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  return `${h}`.padStart(2,'0') + ':' + `${m}`.padStart(2,'0');
+  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
 }
 
 // ─── Data Loading ──────────────────────────────────────────────────────────────
@@ -259,14 +279,10 @@ function prepareTripsData() {
 }
 
 function animate() {
-  if (isPlaying && deckgl && tripsData) {
-    currentTime = (currentTime + animationSpeed) % loopLength;
-    updateTripsVisualization(currentTime);
-    animation = requestAnimationFrame(animate);
-  } else if (animation) {
-    cancelAnimationFrame(animation);
-    animation = null;
-  }
+  if (!isPlaying || !deckOverlay || !tripsData) return;
+  currentTime = (currentTime + animationSpeed) % loopLength;
+  updateTripsVisualization(currentTime);
+  animation = requestAnimationFrame(animate);
 }
 
 function updateTripsVisualization(time) {
@@ -405,7 +421,7 @@ function processAgentData() {
 function addAgentPathsToMap() {
   const features = [], waypoints = [];
   const N = Math.min(50, agentData.length);
-  const colors = Array.from({ length: N }, () => `hsla(${Math.random()*360},70%,60%,0.6)`);
+  const colors = Array.from({ length: N }, () => `hsla(${Math.random()*360},70%,60%,1)`);
 
   agentData.slice(0, N).forEach((a, i) => {
     if (!a.path || a.path.length < 2) return;
@@ -425,7 +441,7 @@ function addAgentPathsToMap() {
     map.addLayer({
       id: AGENT_PATHS_LAYER_ID, type:'line', source:'agent-paths-source',
       layout:{ 'line-join':'round','line-cap':'round' },
-      paint:{ 'line-color':['get','color'], 'line-width':2, 'line-opacity':0.7 }
+      paint:{ 'line-color':['get','color'], 'line-width':8, 'line-opacity':1 }
     });
   } else {
     map.getSource('agent-paths-source').setData({ type:'FeatureCollection', features });
